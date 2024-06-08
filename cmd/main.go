@@ -8,6 +8,7 @@ import (
 	"github.com/ssofiica/test-task-gazprom/config"
 	authDelivery "github.com/ssofiica/test-task-gazprom/internal/delivery/auth"
 	userDelivery "github.com/ssofiica/test-task-gazprom/internal/delivery/user"
+	"github.com/ssofiica/test-task-gazprom/internal/middleware"
 	authRepo "github.com/ssofiica/test-task-gazprom/internal/repository/auth"
 	userRepo "github.com/ssofiica/test-task-gazprom/internal/repository/user"
 	authUseCase "github.com/ssofiica/test-task-gazprom/internal/usecase/auth"
@@ -16,9 +17,6 @@ import (
 )
 
 func main() {
-	app := fiber.New()
-	app.Use(cors.New())
-
 	cfg := config.NewConfig()
 
 	db := connection.InitPostgres(cfg)
@@ -32,14 +30,18 @@ func main() {
 	userUC := userUseCase.NewUseCaseLayer(uRepo)
 	userHandler := userDelivery.NewDeliveryLayer(userUC)
 
+	app := fiber.New()
+	app.Use(cors.New())
+	app.Use(middleware.AuthMiddleware(authUC, userUC))
+
 	api := app.Group("/api/v1")
 	api.Post("/signup", authHandler.SignUp)
 	api.Post("/signin", authHandler.SignIn)
-	api.Get("/user/all", userHandler.GetAll)    // get all users
-	api.Get("/user/search", userHandler.Search) // get one user by name and surname
-	api.Post("/user/subscribe")                 // subscribe user
-	api.Post("/user/unsubscribe")               // unsubscribe user
-	api.Get("/user/notification")               // get today notification about bday
+	api.Get("/user/all", userHandler.GetAll) // get all users
+	// api.Get("/user/search", userHandler.Search) // get one user by name and surname
+	// api.Post("/user/subscribe")                 // subscribe user
+	// api.Post("/user/unsubscribe")               // unsubscribe user
+	// api.Get("/user/notification")               // get today notification about bday
 
 	log.Fatal(app.Listen(":8000"))
 }

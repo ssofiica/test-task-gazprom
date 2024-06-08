@@ -15,9 +15,11 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/redis/go-redis/v9 v9.5.3 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/satori/uuid v1.2.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.54.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
+	golang.org/x/crypto v0.24.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

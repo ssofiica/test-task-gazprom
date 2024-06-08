@@ -9,6 +9,7 @@ import (
 
 type UseCase interface {
 	GetAll(ctx context.Context) ([]*entity.User, error)
+	GetByEmail(ctx context.Context, email string) (*entity.User, error)
 	Search(ctx context.Context, name string, surname string) (*entity.User, error)
 }
 
@@ -28,6 +29,10 @@ func (uc *UseCaseLayer) GetAll(ctx context.Context) ([]*entity.User, error) {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (uc *UseCaseLayer) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
+	return nil, nil
 }
 
 func (uc *UseCaseLayer) Search(ctx context.Context, name string, surname string) (*entity.User, error) {

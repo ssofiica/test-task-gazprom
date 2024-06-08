@@ -6,10 +6,9 @@ type User struct {
 	Surname  string
 	Birthday string
 	Email    string
-	Password string
 }
 
 type Session struct {
-	Id    uint64
+	Id    string
 	Email string
 }

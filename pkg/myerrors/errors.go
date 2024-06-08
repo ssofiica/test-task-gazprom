@@ -1,0 +1,3 @@
+package myerrors
+
+const ()
