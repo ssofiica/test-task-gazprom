@@ -2,7 +2,7 @@ package auth
 
 import (
 	"github.com/gofiber/fiber/v2"
-	auth "github.com/ssofiica/test-task-gazprom/internal/usecase"
+	"github.com/ssofiica/test-task-gazprom/internal/usecase/auth"
 )
 
 type Delivery struct {

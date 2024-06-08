@@ -2,7 +2,7 @@ package auth
 
 import (
 	"github.com/ssofiica/test-task-gazprom/internal/entity"
-	auth "github.com/ssofiica/test-task-gazprom/internal/repository"
+	"github.com/ssofiica/test-task-gazprom/internal/repository/auth"
 )
 
 type UseCase interface {
@@ -20,10 +20,10 @@ func NewUseCaseLayer(repoProps auth.Repo) UseCase {
 	}
 }
 
-func (repo *UseCaseLayer) SignUp(user *entity.User, session *entity.Session) error {
+func (uc *UseCaseLayer) SignUp(user *entity.User, session *entity.Session) error {
 	return nil
 }
 
-func (repo *UseCaseLayer) SignIn(session *entity.Session) error {
+func (uc *UseCaseLayer) SignIn(session *entity.Session) error {
 	return nil
 }
