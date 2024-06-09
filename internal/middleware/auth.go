@@ -24,7 +24,6 @@ func AuthMiddleware(ucAuth auth.UseCase, ucUser user.UseCase) fiber.Handler {
 			return c.Next()
 		}
 
-		fmt.Println(email)
 		user, err := ucUser.GetByEmail(c.Context(), email)
 		if err != nil {
 			fmt.Println("authmiddlware, getByEmail ", err.Error())

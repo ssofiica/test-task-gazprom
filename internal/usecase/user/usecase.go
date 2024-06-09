@@ -10,7 +10,10 @@ import (
 type UseCase interface {
 	GetAll(ctx context.Context) ([]*entity.User, error)
 	GetByEmail(ctx context.Context, email string) (*entity.User, error)
-	Search(ctx context.Context, name string, surname string) (*entity.User, error)
+	Search(ctx context.Context, name string, surname string) ([]*entity.User, error)
+	Subscribe(ctx context.Context, birthdayUserId uint64, subscribingUserId uint64) error
+	UnSubscribe(ctx context.Context, birthdayUserId uint64, subscribingUserId uint64) error
+	GetTodayBirthdayUsers(ctx context.Context, userId uint64) ([]*entity.User, error)
 }
 
 type UseCaseLayer struct {
@@ -32,9 +35,41 @@ func (uc *UseCaseLayer) GetAll(ctx context.Context) ([]*entity.User, error) {
 }
 
 func (uc *UseCaseLayer) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
-	return nil, nil
+	return uc.repo.GetByEmail(ctx, email)
 }
 
-func (uc *UseCaseLayer) Search(ctx context.Context, name string, surname string) (*entity.User, error) {
-	return nil, nil
+func (uc *UseCaseLayer) Search(ctx context.Context, name string, surname string) ([]*entity.User, error) {
+	return uc.repo.Search(ctx, name, surname)
+}
+
+func (uc *UseCaseLayer) Subscribe(ctx context.Context, birthdayUserId uint64, subscribingUserId uint64) error {
+	u, err := uc.repo.GetById(ctx, birthdayUserId)
+	if err != nil {
+		return err
+	}
+	if u == nil {
+		return nil // !!!
+	}
+	err = uc.repo.Subscribe(ctx, birthdayUserId, subscribingUserId)
+	return err
+}
+
+func (uc *UseCaseLayer) UnSubscribe(ctx context.Context, birthdayUserId uint64, subscribingUserId uint64) error {
+	u, err := uc.repo.GetById(ctx, birthdayUserId)
+	if err != nil {
+		return err
+	}
+	if u == nil {
+		return nil // !!!
+	}
+	err = uc.repo.UnSubscribe(ctx, birthdayUserId, subscribingUserId)
+	return err
+}
+
+func (uc *UseCaseLayer) GetTodayBirthdayUsers(ctx context.Context, userId uint64) ([]*entity.User, error) {
+	users, err := uc.repo.GetTodayBirthdayUsers(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }

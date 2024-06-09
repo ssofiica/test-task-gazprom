@@ -1,0 +1,19 @@
+version: '3.9'
+services:
+  postgres:
+    build: /postgres
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=svalova
+      - POSTGRES_PASSWORD=mydbpass
+      - POSTGRES_DB=test-gaz
+    volumes:
+      - ./postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./postgres/data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"

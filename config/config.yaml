@@ -1,0 +1,27 @@
+server:
+  host: localhost
+  port: 8000
+  write-timeout: 5
+  read-timeout: 5
+  idle-timeout: 20
+  shutdown-duration: 5
+  # csrf-secret-key: bcff1861-3fbb-4a5e-925f-8bc392b26592
+
+postgresql:
+  host: localhost
+  port: 5432
+  user: svalova
+  password: mydbpass
+  database: test-gaz
+  sslmode: disable
+  max-open-connections: 10
+  conn-max-lifetime: 30
+  max-idle-conns: 50
+  conn-max-idle-time: 15
+
+redis:
+  host: localhost
+  port: 6379
+  database-session: 0
+  user: svalova
+  password: mydbpass

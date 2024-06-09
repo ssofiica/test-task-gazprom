@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ssofiica/test-task-gazprom/internal/entity"
 	"github.com/ssofiica/test-task-gazprom/internal/entity/dto"
@@ -32,6 +33,7 @@ func (uc *UseCaseLayer) SignUp(ctx context.Context, user *dto.SignUp, session *e
 		return err
 	}
 	user.Password = res
+	fmt.Println(user.Password)
 	err = uc.repo.CreateUser(ctx, user)
 	if err != nil {
 		return err
@@ -40,6 +42,8 @@ func (uc *UseCaseLayer) SignUp(ctx context.Context, user *dto.SignUp, session *e
 }
 
 func (uc *UseCaseLayer) SignIn(ctx context.Context, session *entity.Session) error {
+	// чекнуть почту и пароль с тем, что в базе
+	// если норм, то установить в редис сессию
 	return nil
 }
 

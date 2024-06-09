@@ -29,8 +29,7 @@ func (d *Delivery) SignUp(c *fiber.Ctx) error {
 	}
 	fmt.Println(email)
 	if email != "" {
-		c.Status(401)
-		return c.JSON(map[string]string{"error": "Вы уже зарегистрированы"})
+		return c.Status(fiber.StatusBadRequest).SendString("Вы уже зарегистрированы")
 	}
 
 	//body
@@ -39,6 +38,8 @@ func (d *Delivery) SignUp(c *fiber.Ctx) error {
 		fmt.Println("Auth delivery, SignUp, err: ", err.Error())
 		return c.SendStatus(400)
 	}
+
+	fmt.Println(signupInfo)
 
 	sessionId := uuid.NewV4().String()
 	session := entity.Session{
