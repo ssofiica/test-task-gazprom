@@ -9,15 +9,18 @@ import (
 	"github.com/ssofiica/test-task-gazprom/internal/entity"
 	"github.com/ssofiica/test-task-gazprom/internal/entity/dto"
 	"github.com/ssofiica/test-task-gazprom/internal/usecase/auth"
+	"github.com/ssofiica/test-task-gazprom/internal/usecase/user"
 )
 
 type Delivery struct {
-	uc auth.UseCase
+	ucAuth auth.UseCase
+	ucUser user.UseCase
 }
 
-func NewDeliveryLayer(ucProps auth.UseCase) *Delivery {
+func NewDeliveryLayer(ucaProps auth.UseCase, ucuProps user.UseCase) *Delivery {
 	return &Delivery{
-		uc: ucProps,
+		ucAuth: ucaProps,
+		ucUser: ucuProps,
 	}
 }
 
@@ -41,17 +44,24 @@ func (d *Delivery) SignUp(c *fiber.Ctx) error {
 
 	fmt.Println(signupInfo)
 
+	user, err := d.ucUser.GetByEmail(c.Context(), signupInfo.Email)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Ошибка сервера")
+	}
+	if user != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Вы уже зарегистрированы")
+	}
+
 	sessionId := uuid.NewV4().String()
 	session := entity.Session{
 		Id:    sessionId,
 		Email: signupInfo.Email,
 	}
 	//registration
-	err := d.uc.SignUp(c.Context(), &signupInfo, &session)
+	err = d.ucAuth.SignUp(c.Context(), &signupInfo, &session)
 	if err != nil {
 		fmt.Println(err)
-		c.Status(500)
-		return c.JSON(map[string]string{"error": "Ошибка сервера"})
+		return c.Status(500).JSON(map[string]string{"error": "Ошибка сервера"})
 	}
 
 	//setting cookie
@@ -61,20 +71,54 @@ func (d *Delivery) SignUp(c *fiber.Ctx) error {
 	cookie.Expires = time.Now().Add(14 * 24 * time.Hour)
 	c.Cookie(cookie)
 
-	c.Status(200)
-	return c.SendString("Вы зарегистрированы")
+	return c.Status(200).SendString("Вы зарегистрированы")
 }
 
 func (d *Delivery) SignIn(c *fiber.Ctx) error {
-	return nil
+	email := ""
+	emailCtx := c.Locals("email")
+	if emailCtx != nil {
+		email = emailCtx.(string)
+	}
+	fmt.Println(email)
+	if email != "" {
+		return c.Status(fiber.StatusBadRequest).SendString("Вы уже авторизированы")
+	}
+
+	//body
+	signinInfo := dto.SignIn{}
+	if err := c.BodyParser(&signinInfo); err != nil {
+		fmt.Println("Auth delivery, SignIn, err: ", err.Error())
+		return c.SendStatus(400)
+	}
+
+	fmt.Println(signinInfo)
+
+	user, err := d.ucUser.GetByEmail(c.Context(), signinInfo.Email)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Ошибка сервера")
+	}
+	if user == nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Неверный адрес почты")
+	}
+
+	sessionId := uuid.NewV4().String()
+	session := entity.Session{
+		Id:    sessionId,
+		Email: signinInfo.Email,
+	}
+
+	err = d.ucAuth.SignIn(c.Context(), user, &signinInfo, &session)
+	if err != nil {
+		fmt.Println(err)
+		return c.Status(500).JSON(map[string]string{"error": "Ошибка сервера"})
+	}
+
+	cookie := new(fiber.Cookie)
+	cookie.Name = "session_id"
+	cookie.Value = sessionId
+	cookie.Expires = time.Now().Add(14 * 24 * time.Hour)
+	c.Cookie(cookie)
+
+	return c.Status(200).SendString("Вы успешно авторизированы")
 }
-
-// cookie := new(fiber.Cookie)
-//   cookie.Name = "john"
-//   cookie.Value = "doe"
-//   cookie.Expires = time.Now().Add(24 * time.Hour)
-
-//   // Set cookie
-//   c.Cookie(cookie)
-
-//c.Cookies("name")         // "john"

@@ -51,7 +51,7 @@ func (repo *RepoLayer) GetAll(ctx context.Context) ([]*entity.User, error) {
 
 func (repo *RepoLayer) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
 	user := entity.User{}
-	err := repo.db.QueryRowContext(ctx, `SELECT id, name, surname, birthday FROM "user" WHERE email=$1`, email).Scan(&user.Id, &user.Name, &user.Surname, &user.Birthday)
+	err := repo.db.QueryRowContext(ctx, `SELECT id, name, surname, password, birthday FROM "user" WHERE email=$1`, email).Scan(&user.Id, &user.Name, &user.Surname, &user.Password, &user.Birthday)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &entity.User{}, nil

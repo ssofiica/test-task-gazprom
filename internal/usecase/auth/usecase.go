@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/ssofiica/test-task-gazprom/internal/entity"
@@ -12,7 +13,7 @@ import (
 
 type UseCase interface {
 	SignUp(ctx context.Context, user *dto.SignUp, session *entity.Session) error
-	SignIn(ctx context.Context, session *entity.Session) error
+	SignIn(ctx context.Context, user *entity.User, signInInfo *dto.SignIn, session *entity.Session) error
 	SetSessionValue(ctx context.Context, session *entity.Session) error
 	GetSessionValue(ctx context.Context, sessionId string) (string, error)
 }
@@ -41,10 +42,18 @@ func (uc *UseCaseLayer) SignUp(ctx context.Context, user *dto.SignUp, session *e
 	return uc.repo.SetSessionValue(ctx, session)
 }
 
-func (uc *UseCaseLayer) SignIn(ctx context.Context, session *entity.Session) error {
+func (uc *UseCaseLayer) SignIn(ctx context.Context, user *entity.User, sigInInfo *dto.SignIn, session *entity.Session) error {
 	// чекнуть почту и пароль с тем, что в базе
-	// если норм, то установить в редис сессию
-	return nil
+	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(sigInInfo.Password)); err == nil {
+		// если норм, то установить в редис сессию
+		err = uc.SetSessionValue(ctx, session)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return errors.New("Неверный пароль")
+	// пароли не совпадают
 }
 
 func (uc *UseCaseLayer) SetSessionValue(ctx context.Context, session *entity.Session) error {

@@ -24,10 +24,10 @@ func main() {
 
 	aRepo := authRepo.NewRepoLayer(db, redis)
 	authUC := authUseCase.NewUseCaseLayer(aRepo)
-	authHandler := authDelivery.NewDeliveryLayer(authUC)
-
 	uRepo := userRepo.NewRepoLayer(db)
 	userUC := userUseCase.NewUseCaseLayer(uRepo)
+
+	authHandler := authDelivery.NewDeliveryLayer(authUC, userUC)
 	userHandler := userDelivery.NewDeliveryLayer(userUC)
 
 	app := fiber.New()
@@ -36,7 +36,7 @@ func main() {
 
 	api := app.Group("/api/v1")
 	api.Post("/signup", authHandler.SignUp)
-	//api.Post("/signin", authHandler.SignIn)
+	api.Post("/signin", authHandler.SignIn)
 	api.Get("/user/all", userHandler.GetAll)                         // get all users
 	api.Get("/user/search", userHandler.Search)                      // search users by name and surname
 	api.Post("/user/subscribe/:id", userHandler.Subscribe)           // subscribe user
