@@ -10,6 +10,7 @@ var (
 	Registered       = errors.New("Вы уже зарегистрированы")
 	InternalServer   = errors.New("Ошибка сервера")
 	ParametrIsNumber = errors.New("Параметр должен быть числовым")
+	BadCredentials   = errors.New("Предоставлены некорректные данные")
 
 	WrongPassword        = errors.New("Неверный пароль")
 	NoUser               = errors.New("Такого пользователя нет")
