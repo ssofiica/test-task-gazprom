@@ -15,9 +15,6 @@ func AuthMiddleware(ucAuth auth.UseCase, ucUser user.UseCase) fiber.Handler {
 			fmt.Println("no session_id")
 			return c.Next()
 		}
-
-		fmt.Println(sessionId)
-
 		email, err := ucAuth.GetSessionValue(c.Context(), sessionId)
 		if err != nil {
 			fmt.Println("authmiddlware, getSessionValue ", err.Error())

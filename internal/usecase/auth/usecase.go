@@ -2,12 +2,12 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/ssofiica/test-task-gazprom/internal/entity"
 	"github.com/ssofiica/test-task-gazprom/internal/entity/dto"
 	"github.com/ssofiica/test-task-gazprom/internal/repository/auth"
+	"github.com/ssofiica/test-task-gazprom/pkg/myerrors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -52,8 +52,7 @@ func (uc *UseCaseLayer) SignIn(ctx context.Context, user *entity.User, sigInInfo
 		}
 		return nil
 	}
-	return errors.New("Неверный пароль")
-	// пароли не совпадают
+	return myerrors.WrongPassword
 }
 
 func (uc *UseCaseLayer) SetSessionValue(ctx context.Context, session *entity.Session) error {

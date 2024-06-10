@@ -1,11 +1,13 @@
 package user
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/ssofiica/test-task-gazprom/internal/usecase/user"
+	"github.com/ssofiica/test-task-gazprom/pkg/myerrors"
 )
 
 type Delivery struct {
@@ -22,12 +24,12 @@ func (d *Delivery) GetAll(c *fiber.Ctx) error {
 	users, err := d.uc.GetAll(c.Context())
 	if err != nil {
 		fmt.Println("User delivery, GetAll, err: ", err.Error())
-		return c.SendStatus(500)
+		return c.Status(500).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
 	}
 	err = c.JSON(users)
 	if err != nil {
 		fmt.Println("User delivery, GetAll, error in marshaling: ", err.Error())
-		return c.SendStatus(500)
+		return c.Status(500).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
 	}
 	return c.SendStatus(200)
 }
@@ -41,14 +43,14 @@ func (d *Delivery) Search(c *fiber.Ctx) error {
 
 	users, err := d.uc.Search(c.Context(), search.Name, search.Surname)
 	if err != nil {
-		// !!!
-		return c.SendStatus(500)
+		fmt.Println(err.Error())
+		return c.Status(500).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
 	}
 
 	err = c.JSON(users)
 	if err != nil {
 		fmt.Println("User delivery, Search, error in marshaling: ", err.Error())
-		return c.SendStatus(500)
+		return c.Status(500).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
 	}
 	return c.SendStatus(200)
 }
@@ -60,7 +62,7 @@ func (d *Delivery) Subscribe(c *fiber.Ctx) error {
 		email = emailCtx.(string)
 	}
 	if email == "" {
-		return c.Status(fiber.StatusUnauthorized).SendString("Вы не зарегистрированы")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": myerrors.Unauthorized.Error()})
 	}
 
 	param := c.Params("id")
@@ -71,16 +73,23 @@ func (d *Delivery) Subscribe(c *fiber.Ctx) error {
 
 	user, err := d.uc.GetByEmail(c.Context(), email)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Server error")
+		fmt.Println(err.Error())
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
 	}
 
 	err = d.uc.Subscribe(c.Context(), uint64(id), user.Id)
 	if err != nil {
-		// !!!
-		return c.Status(500).SendString("Server error")
+		fmt.Println(err.Error())
+		if errors.Is(err, myerrors.NoSubcribeBdayUser) {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+		if errors.Is(err, myerrors.NoUser) {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.Status(500).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
 	}
 
-	return c.Status(200).SendString("Подписка успешна")
+	return c.Status(200).JSON(fiber.Map{"detail": "Подписка успешно оформлена"})
 }
 
 func (d *Delivery) UnSubscribe(c *fiber.Ctx) error {
@@ -90,7 +99,7 @@ func (d *Delivery) UnSubscribe(c *fiber.Ctx) error {
 		email = emailCtx.(string)
 	}
 	if email == "" {
-		return c.Status(fiber.StatusUnauthorized).SendString("Вы не зарегистрированы")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": myerrors.Unauthorized.Error()})
 	}
 
 	param := c.Params("id")
@@ -102,17 +111,22 @@ func (d *Delivery) UnSubscribe(c *fiber.Ctx) error {
 	user, err := d.uc.GetByEmail(c.Context(), email)
 	if err != nil {
 		fmt.Println(err)
-		return c.Status(fiber.StatusInternalServerError).SendString("Server error")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
 	}
 
 	err = d.uc.UnSubscribe(c.Context(), uint64(id), user.Id)
 	if err != nil {
-		// !!!
 		fmt.Println(err)
-		return c.Status(500).SendString("Server error")
+		if errors.Is(err, myerrors.NoUnsubcribeBdayUser) {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+		if errors.Is(err, myerrors.NoUser) {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.Status(500).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
 	}
 
-	return c.Status(200).SendString("Подписка успешно отменена")
+	return c.Status(200).JSON(fiber.Map{"detail": "Подписка успешно отменена"})
 }
 
 func (d *Delivery) GetTodayBirthdayUsers(c *fiber.Ctx) error {
@@ -122,18 +136,18 @@ func (d *Delivery) GetTodayBirthdayUsers(c *fiber.Ctx) error {
 		email = emailCtx.(string)
 	}
 	if email == "" {
-		return c.Status(fiber.StatusUnauthorized).SendString("Вы не зарегистрированы")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": myerrors.Unauthorized.Error()})
 	}
 
 	user, err := d.uc.GetByEmail(c.Context(), email)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Server error")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
 	}
 
 	users, err := d.uc.GetTodayBirthdayUsers(c.Context(), uint64(user.Id))
 	if err != nil {
-		// !!!
-		return c.Status(500).SendString("Server error")
+		fmt.Println(err)
+		return c.Status(500).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
 	}
 
 	return c.Status(200).JSON(users)

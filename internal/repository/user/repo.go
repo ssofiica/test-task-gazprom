@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/ssofiica/test-task-gazprom/internal/entity"
+	"github.com/ssofiica/test-task-gazprom/pkg/myerrors"
 )
 
 type Repo interface {
@@ -54,8 +55,9 @@ func (repo *RepoLayer) GetByEmail(ctx context.Context, email string) (*entity.Us
 	err := repo.db.QueryRowContext(ctx, `SELECT id, name, surname, password, birthday FROM "user" WHERE email=$1`, email).Scan(&user.Id, &user.Name, &user.Surname, &user.Password, &user.Birthday)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return &entity.User{}, nil
+			return nil, myerrors.NoUser
 		}
+		return nil, err
 	}
 	user.Email = email
 	return &user, nil
@@ -66,8 +68,9 @@ func (repo *RepoLayer) GetById(ctx context.Context, id uint64) (*entity.User, er
 	err := repo.db.QueryRowContext(ctx, `SELECT name, surname, email, birthday FROM "user" WHERE id=$1`, id).Scan(&user.Name, &user.Surname, &user.Email, &user.Birthday)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return &entity.User{}, nil
+			return nil, myerrors.NoUser
 		}
+		return nil, err
 	}
 	user.Id = id
 	return &user, nil
@@ -96,18 +99,32 @@ func (repo *RepoLayer) Search(ctx context.Context, name string, surname string) 
 }
 
 func (repo *RepoLayer) Subscribe(ctx context.Context, birthdayUserId uint64, subscribingUserId uint64) error {
-	_, err := repo.db.ExecContext(ctx, `INSERT INTO birthday_subscribing (birthday_user_id, subscribing_user_id) 
+	res, err := repo.db.ExecContext(ctx, `INSERT INTO birthday_subscribing (birthday_user_id, subscribing_user_id) 
 		VALUES ($1, $2)`, birthdayUserId, subscribingUserId)
 	if err != nil {
 		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return myerrors.NoSubcribeBdayUser
 	}
 	return nil
 }
 
 func (repo *RepoLayer) UnSubscribe(ctx context.Context, birthdayUserId uint64, subscribingUserId uint64) error {
-	_, err := repo.db.ExecContext(ctx, `DELETE FROM birthday_subscribing WHERE birthday_user_id=$1 AND subscribing_user_id=$2`, birthdayUserId, subscribingUserId)
+	res, err := repo.db.ExecContext(ctx, `DELETE FROM birthday_subscribing WHERE birthday_user_id=$1 AND subscribing_user_id=$2`, birthdayUserId, subscribingUserId)
 	if err != nil {
 		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return myerrors.NoUnsubcribeBdayUser
 	}
 	return nil
 }

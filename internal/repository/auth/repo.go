@@ -8,6 +8,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/ssofiica/test-task-gazprom/internal/entity"
 	"github.com/ssofiica/test-task-gazprom/internal/entity/dto"
+	"github.com/ssofiica/test-task-gazprom/pkg/myerrors"
 )
 
 type Repo interface {
@@ -29,9 +30,16 @@ func NewRepoLayer(dbProps *sql.DB, redisProps *redis.Client) Repo {
 }
 
 func (repo *RepoLayer) CreateUser(ctx context.Context, user *dto.SignUp) error {
-	_, err := repo.db.ExecContext(ctx, `INSERT INTO "user" (name, surname, email, password, birthday) VALUES ($1, $2, $3, $4, $5)`, user.Name, user.Surname, user.Email, user.Password, user.Birthday)
+	res, err := repo.db.ExecContext(ctx, `INSERT INTO "user" (name, surname, email, password, birthday) VALUES ($1, $2, $3, $4, $5)`, user.Name, user.Surname, user.Email, user.Password, user.Birthday)
 	if err != nil {
 		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return myerrors.NoCreatingUser
 	}
 	return nil
 }

@@ -43,27 +43,19 @@ func (uc *UseCaseLayer) Search(ctx context.Context, name string, surname string)
 }
 
 func (uc *UseCaseLayer) Subscribe(ctx context.Context, birthdayUserId uint64, subscribingUserId uint64) error {
-	u, err := uc.repo.GetById(ctx, birthdayUserId)
+	_, err := uc.repo.GetById(ctx, birthdayUserId)
 	if err != nil {
 		return err
 	}
-	if u == nil {
-		return nil // !!!
-	}
-	err = uc.repo.Subscribe(ctx, birthdayUserId, subscribingUserId)
-	return err
+	return uc.repo.Subscribe(ctx, birthdayUserId, subscribingUserId)
 }
 
 func (uc *UseCaseLayer) UnSubscribe(ctx context.Context, birthdayUserId uint64, subscribingUserId uint64) error {
-	u, err := uc.repo.GetById(ctx, birthdayUserId)
+	_, err := uc.repo.GetById(ctx, birthdayUserId)
 	if err != nil {
 		return err
 	}
-	if u == nil {
-		return nil // !!!
-	}
-	err = uc.repo.UnSubscribe(ctx, birthdayUserId, subscribingUserId)
-	return err
+	return uc.repo.UnSubscribe(ctx, birthdayUserId, subscribingUserId)
 }
 
 func (uc *UseCaseLayer) GetTodayBirthdayUsers(ctx context.Context, userId uint64) ([]*entity.User, error) {
