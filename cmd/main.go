@@ -37,6 +37,7 @@ func main() {
 	api := app.Group("/api/v1")
 	api.Post("/signup", authHandler.SignUp)
 	api.Post("/signin", authHandler.SignIn)
+	api.Post("/signout", authHandler.SignOut)
 	api.Get("/user/all", userHandler.GetAll)                         // get all users
 	api.Get("/user/search", userHandler.Search)                      // search users by name and surname
 	api.Post("/user/subscribe/:id", userHandler.Subscribe)           // subscribe user

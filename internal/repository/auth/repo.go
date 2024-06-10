@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -12,9 +13,10 @@ import (
 )
 
 type Repo interface {
-	CreateUser(ctx context.Context, user *dto.SignUp) error
+	CreateUser(ctx context.Context, user *dto.SignUp) (*entity.User, error)
 	SetSessionValue(ctx context.Context, session *entity.Session) error
 	GetSessionValue(ctx context.Context, sessionId string) (string, error)
+	DeleteSessionValue(ctx context.Context, sessionId string) error
 }
 
 type RepoLayer struct {
@@ -29,19 +31,17 @@ func NewRepoLayer(dbProps *sql.DB, redisProps *redis.Client) Repo {
 	}
 }
 
-func (repo *RepoLayer) CreateUser(ctx context.Context, user *dto.SignUp) error {
-	res, err := repo.db.ExecContext(ctx, `INSERT INTO "user" (name, surname, email, password, birthday) VALUES ($1, $2, $3, $4, $5)`, user.Name, user.Surname, user.Email, user.Password, user.Birthday)
+func (repo *RepoLayer) CreateUser(ctx context.Context, user *dto.SignUp) (*entity.User, error) {
+	row := repo.db.QueryRowContext(ctx, `INSERT INTO "user" (name, surname, email, password, birthday) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, surname, email`, user.Name, user.Surname, user.Email, user.Password, user.Birthday)
+	u := entity.User{}
+	err := row.Scan(&u.Id, &u.Name, &u.Surname, &u.Email)
 	if err != nil {
-		return err
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, myerrors.NoCreatingUser
+		}
+		return nil, err
 	}
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
-		return myerrors.NoCreatingUser
-	}
-	return nil
+	return &u, nil
 }
 
 func (repo *RepoLayer) SetSessionValue(ctx context.Context, session *entity.Session) error {
@@ -60,4 +60,6 @@ func (repo *RepoLayer) GetSessionValue(ctx context.Context, sessionId string) (s
 	return value, nil
 }
 
-//err := repo.redis.Del(ctx, key).Err()
+func (repo *RepoLayer) DeleteSessionValue(ctx context.Context, sessionId string) error {
+	return repo.redis.Del(ctx, sessionId).Err()
+}

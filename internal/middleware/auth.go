@@ -12,23 +12,21 @@ func AuthMiddleware(ucAuth auth.UseCase, ucUser user.UseCase) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		sessionId := c.Cookies("session_id")
 		if sessionId == "" {
-			fmt.Println("no session_id")
 			return c.Next()
 		}
 		email, err := ucAuth.GetSessionValue(c.Context(), sessionId)
 		if err != nil {
-			fmt.Println("authmiddlware, getSessionValue ", err.Error())
+			fmt.Println(err)
 			return c.Next()
 		}
 
 		user, err := ucUser.GetByEmail(c.Context(), email)
 		if err != nil {
-			fmt.Println("authmiddlware, getByEmail ", err.Error())
+			fmt.Println(err)
 			return c.Next()
 		}
 		if user != nil {
 			c.Locals("email", user.Email)
-			fmt.Println(user.Email)
 		}
 		return c.Next()
 	}

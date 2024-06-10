@@ -32,7 +32,6 @@ func (d *Delivery) SignUp(c *fiber.Ctx) error {
 	if emailCtx != nil {
 		email = emailCtx.(string)
 	}
-	fmt.Println(email)
 	if email != "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": myerrors.Registered.Error()})
 	}
@@ -40,14 +39,13 @@ func (d *Delivery) SignUp(c *fiber.Ctx) error {
 	//body
 	signupInfo := dto.SignUp{}
 	if err := c.BodyParser(&signupInfo); err != nil {
-		fmt.Println("Auth delivery, SignUp, err: ", err.Error())
+		fmt.Println(err)
 		return c.SendStatus(400)
 	}
 
-	fmt.Println(signupInfo)
-
 	user, err := d.ucUser.GetByEmail(c.Context(), signupInfo.Email)
-	if err != nil {
+	if err != nil && !errors.Is(err, myerrors.NoUser) {
+		fmt.Println(err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
 	}
 	if user != nil {
@@ -60,7 +58,7 @@ func (d *Delivery) SignUp(c *fiber.Ctx) error {
 		Email: signupInfo.Email,
 	}
 	//registration
-	err = d.ucAuth.SignUp(c.Context(), &signupInfo, &session)
+	u, err := d.ucAuth.SignUp(c.Context(), &signupInfo, &session)
 	if err != nil {
 		fmt.Println(err)
 		return c.Status(500).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
@@ -73,7 +71,7 @@ func (d *Delivery) SignUp(c *fiber.Ctx) error {
 	cookie.Expires = time.Now().Add(14 * 24 * time.Hour)
 	c.Cookie(cookie)
 
-	return c.Status(200).JSON(fiber.Map{"detail": "Вы успешно зарегистрированы"})
+	return c.Status(200).JSON(dto.NewUser(u))
 }
 
 func (d *Delivery) SignIn(c *fiber.Ctx) error {
@@ -82,7 +80,6 @@ func (d *Delivery) SignIn(c *fiber.Ctx) error {
 	if emailCtx != nil {
 		email = emailCtx.(string)
 	}
-	fmt.Println(email)
 	if email != "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": myerrors.Authorized.Error()})
 	}
@@ -90,18 +87,16 @@ func (d *Delivery) SignIn(c *fiber.Ctx) error {
 	//body
 	signinInfo := dto.SignIn{}
 	if err := c.BodyParser(&signinInfo); err != nil {
-		fmt.Println("Auth delivery, SignIn, err: ", err.Error())
+		fmt.Println(err)
 		return c.SendStatus(400)
 	}
 
-	fmt.Println(signinInfo)
-
 	user, err := d.ucUser.GetByEmail(c.Context(), signinInfo.Email)
 	if err != nil {
+		if errors.Is(err, myerrors.NoUser) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Неверный адрес почты"})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
-	}
-	if user == nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Неверный адрес почты"})
 	}
 
 	sessionId := uuid.NewV4().String()
@@ -125,7 +120,27 @@ func (d *Delivery) SignIn(c *fiber.Ctx) error {
 	cookie.Expires = time.Now().Add(14 * 24 * time.Hour)
 	c.Cookie(cookie)
 
-	return c.Status(200).JSON(fiber.Map{"detail": "Вы успешно авторизованы"})
+	return c.Status(200).JSON(dto.NewUser(user))
 }
 
-//return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Внутренняя ошибка сервера"})
+func (d *Delivery) SignOut(c *fiber.Ctx) error {
+	email := ""
+	emailCtx := c.Locals("email")
+	if emailCtx != nil {
+		email = emailCtx.(string)
+	}
+	if email == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": myerrors.Unauthorized.Error()})
+	}
+
+	sessionId := c.Cookies("session_id")
+
+	err := d.ucAuth.DeleteSession(c.Context(), sessionId)
+	if err != nil {
+		fmt.Println(err)
+		return c.Status(500).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
+	}
+
+	c.ClearCookie("session_id")
+	return c.Status(200).JSON(fiber.Map{"detail": "Сессия успешно завершена"})
+}

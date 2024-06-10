@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/ssofiica/test-task-gazprom/internal/entity"
 	"github.com/ssofiica/test-task-gazprom/pkg/myerrors"
@@ -44,7 +43,6 @@ func (repo *RepoLayer) GetAll(ctx context.Context) ([]*entity.User, error) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println(user.Birthday)
 		users = append(users, &user)
 	}
 	return users, nil

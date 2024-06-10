@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ssofiica/test-task-gazprom/internal/entity"
 	"github.com/ssofiica/test-task-gazprom/internal/entity/dto"
@@ -12,10 +11,11 @@ import (
 )
 
 type UseCase interface {
-	SignUp(ctx context.Context, user *dto.SignUp, session *entity.Session) error
+	SignUp(ctx context.Context, user *dto.SignUp, session *entity.Session) (*entity.User, error)
 	SignIn(ctx context.Context, user *entity.User, signInInfo *dto.SignIn, session *entity.Session) error
 	SetSessionValue(ctx context.Context, session *entity.Session) error
 	GetSessionValue(ctx context.Context, sessionId string) (string, error)
+	DeleteSession(ctx context.Context, sessionId string) error
 }
 
 type UseCaseLayer struct {
@@ -28,18 +28,21 @@ func NewUseCaseLayer(repoProps auth.Repo) UseCase {
 	}
 }
 
-func (uc *UseCaseLayer) SignUp(ctx context.Context, user *dto.SignUp, session *entity.Session) error {
+func (uc *UseCaseLayer) SignUp(ctx context.Context, user *dto.SignUp, session *entity.Session) (*entity.User, error) {
 	res, err := GetHash(user.Password)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	user.Password = res
-	fmt.Println(user.Password)
-	err = uc.repo.CreateUser(ctx, user)
+	u, err := uc.repo.CreateUser(ctx, user)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return uc.repo.SetSessionValue(ctx, session)
+	err = uc.repo.SetSessionValue(ctx, session)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
 }
 
 func (uc *UseCaseLayer) SignIn(ctx context.Context, user *entity.User, sigInInfo *dto.SignIn, session *entity.Session) error {
@@ -53,6 +56,10 @@ func (uc *UseCaseLayer) SignIn(ctx context.Context, user *entity.User, sigInInfo
 		return nil
 	}
 	return myerrors.WrongPassword
+}
+
+func (uc *UseCaseLayer) DeleteSession(ctx context.Context, sessionId string) error {
+	return uc.repo.DeleteSessionValue(ctx, sessionId)
 }
 
 func (uc *UseCaseLayer) SetSessionValue(ctx context.Context, session *entity.Session) error {
