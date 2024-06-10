@@ -12,6 +12,7 @@ import (
 	"github.com/ssofiica/test-task-gazprom/pkg/myerrors"
 )
 
+//go:generate mockgen -source ./repo.go -destination=./mocks/service.go -package=mock_service
 type Repo interface {
 	CreateUser(ctx context.Context, user *dto.SignUp) (*entity.User, error)
 	SetSessionValue(ctx context.Context, session *entity.Session) error
