@@ -57,7 +57,7 @@ func (d *Delivery) Search(c *fiber.Ctx) error {
 	search := NameAndSurname{}
 	if err := c.BodyParser(&search); err != nil {
 		fmt.Println(err)
-		return c.SendStatus(400)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": myerrors.BadCredentials.Error()})
 	}
 
 	users, err := d.uc.Search(c.Context(), search.Name, search.Surname)
@@ -103,7 +103,7 @@ func (d *Delivery) Subscribe(c *fiber.Ctx) error {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
 		if errors.Is(err, myerrors.NoUser) {
-			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+			return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 		}
 		return c.Status(500).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
 	}
@@ -140,7 +140,7 @@ func (d *Delivery) UnSubscribe(c *fiber.Ctx) error {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
 		if errors.Is(err, myerrors.NoUser) {
-			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+			return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 		}
 		return c.Status(500).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
 	}

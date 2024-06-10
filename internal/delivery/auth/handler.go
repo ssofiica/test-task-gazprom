@@ -33,14 +33,14 @@ func (d *Delivery) SignUp(c *fiber.Ctx) error {
 		email = emailCtx.(string)
 	}
 	if email != "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": myerrors.Registered.Error()})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": myerrors.Registered.Error()})
 	}
 
 	//body
 	signupInfo := dto.SignUp{}
 	if err := c.BodyParser(&signupInfo); err != nil {
 		fmt.Println(err)
-		return c.SendStatus(400)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": myerrors.BadCredentials.Error()})
 	}
 
 	user, err := d.ucUser.GetByEmail(c.Context(), signupInfo.Email)
@@ -49,7 +49,7 @@ func (d *Delivery) SignUp(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": myerrors.InternalServer.Error()})
 	}
 	if user != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": myerrors.Registered.Error()})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": myerrors.Registered.Error()})
 	}
 
 	sessionId := uuid.NewV4().String()
@@ -81,14 +81,14 @@ func (d *Delivery) SignIn(c *fiber.Ctx) error {
 		email = emailCtx.(string)
 	}
 	if email != "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": myerrors.Authorized.Error()})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": myerrors.Authorized.Error()})
 	}
 
 	//body
 	signinInfo := dto.SignIn{}
 	if err := c.BodyParser(&signinInfo); err != nil {
 		fmt.Println(err)
-		return c.SendStatus(400)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": myerrors.BadCredentials.Error()})
 	}
 
 	user, err := d.ucUser.GetByEmail(c.Context(), signinInfo.Email)
@@ -130,7 +130,7 @@ func (d *Delivery) SignOut(c *fiber.Ctx) error {
 		email = emailCtx.(string)
 	}
 	if email == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": myerrors.Unauthorized.Error()})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": myerrors.Unauthorized.Error()})
 	}
 
 	sessionId := c.Cookies("session_id")
